@@ -2,7 +2,12 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import MovieList from './components/movie-list';
 import MovieDetails from './components/movie-details';
-import MovieForm from './components/movie-form'
+import MovieForm from './components/movie-form';
+import { useCookies} from 'react-cookie';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSignOutAlt} from '@fortawesome/free-solid-svg-icons';
+import { faFilm} from '@fortawesome/free-solid-svg-icons';
+import { useFetch } from './hooks/useFetch';
 
 function App() {
 
@@ -10,20 +15,19 @@ function App() {
 
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [editedMovie, setEditedMovie] = useState(null);
+  const [token, setToken, deleteToken] = useCookies(['mr-token']);
+  const [data, loading, error] = useFetch();
 
   useEffect(() => {
+    setMovies(data);
 
-    fetch("http://127.0.0.1:8000/api/movies/", {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Token 5a6cce932b1afeb1ded4436b0adb20050e5ee062'
-      }
-    })
-      .then(resp => resp.json())
-      .then(resp => setMovies(resp))
-      .catch(error => console.log(error))
-  }, [])
+   
+  }, [data])
+
+  useEffect (() =>{
+    console.log(token);
+    if(!token['mr-token']) window.location.href = '/';
+  }, [token])
 
 
 
@@ -61,17 +65,42 @@ function App() {
 
   }
 
+  const removeClicked = movie =>{
+    const newMovies = movies.filter( mov => mov.id !== movie.id);
+      
+
+    setMovies(newMovies);
+
+  }
+  const logoutUser = () =>{
+    deleteToken(['mr-token']);
+
+  }
+
+  if(loading) return <h1>Loading....</h1>
+  if(error) return <h1>Error loading movies...</h1>
+
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Films rater application</h1>
+        <h1>
+          <FontAwesomeIcon icon={faFilm} />
+          
+          Film rater application
+          
+          </h1>
+          <FontAwesomeIcon icon={faSignOutAlt} onClick={logoutUser}/>
 
       </header>
       <div className="layout">
 
         <div>
-          <MovieList movies={movies} movieClicked={loadMovie} editClicked={editClicked} />
-          <button onClick={newMovie}>New movie</button>
+          <MovieList 
+          movies={movies} 
+          movieClicked={loadMovie} 
+          editClicked={editClicked}
+          removeClicked ={removeClicked} />
+          <button onClick={newMovie}>New film</button>
         </div>
         <MovieDetails movie={selectedMovie} updateMovie={loadMovie} />
         {editedMovie ? <MovieForm movie={editedMovie} updatedMovie={updatedMovie} movieCreated={movieCreated} /> : null}
